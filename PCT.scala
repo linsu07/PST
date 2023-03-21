@@ -24,6 +24,7 @@ class PST(val vocabularySize:Long,val depth:Int=5) extends Serializable{
       preActionsNode(action).setCount(path,finalAction)
     }
   }
+  // used in spark combine function of aggregateBykey operation, 2 small trees merged and became a bigger tree.
   def merge(other:PST):PST={
     for(k<-0.until(nextActionsCount.size)){
       nextActionsCount(k) = nextActionsCount(k) + other.nextActionsCount(k)
@@ -36,7 +37,7 @@ class PST(val vocabularySize:Long,val depth:Int=5) extends Serializable{
     }
     this
   }
-
+  // used in sequence function of aggregateBykey operation. a squence relations is extracted to the PST tree.
   def build(actIds:ListBuffer[Int]):PST = {
     // a,b,c,d,e,f
     for(i<-1.to(math.min(depth,actIds.size))){
@@ -49,6 +50,7 @@ class PST(val vocabularySize:Long,val depth:Int=5) extends Serializable{
     }
     this
   }
+  // print tree info for review.
   def print(path:String = "root",layers:Int = 3,voc:Array[String]=null):Unit ={
     println(s"path=${path} ")
     val buf = new StringBuilder()
@@ -72,6 +74,7 @@ class PST(val vocabularySize:Long,val depth:Int=5) extends Serializable{
       }
     }
   }
+  // truncate the path with lower than minCount times.
   def rebuildAll(minCount:Double):Boolean={
     val total = nextActionsCount.sum
     if(total<=minCount)
@@ -90,6 +93,7 @@ class PST(val vocabularySize:Long,val depth:Int=5) extends Serializable{
     }
     false
   }
+  // save the tree to disk for later usage.
   def save(path:String,spark:SparkSession):Unit={
     val rawList = new ListBuffer[(String,Vector)]
     collectData(rawList,"root")
@@ -125,6 +129,7 @@ class PST(val vocabularySize:Long,val depth:Int=5) extends Serializable{
     val lastArray = Array(path.last)
     path.dropRight(0).reverse.union(lastArray)
   }
+  // search on tree to find probability with longest possible suffix.
   def findCondiProb(actions: Array[Int],depth:AtomicInteger = new AtomicInteger(0)):Double = {
     var prob:Double = 0.0
     depth.incrementAndGet()
@@ -143,6 +148,7 @@ class PST(val vocabularySize:Long,val depth:Int=5) extends Serializable{
 }
 object PST{
   val epsilon :Double= 1e-7
+  // load tree from disk.
   def load(path:String,spark:SparkSession,depth:Int):PST={
     val frame = spark.read.parquet(path)
     val actionNum = frame.head().getAs[Vector](1).toArray.size
