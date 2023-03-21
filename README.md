@@ -4,3 +4,4 @@ a spark version of probability suffix tree which can run on spark clusters to pr
 probability suffix tree (PST) is very efficient when calculate conditional probability given a sequence. 
 
 This is a spark version of PST, which can run on spark clusters, so PST tree is built parallelly
+the ideas of PST come from "Mining for Outliers in Sequential Databases.pdf" which is listed in repo 
